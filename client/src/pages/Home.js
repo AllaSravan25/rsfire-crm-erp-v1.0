@@ -6,7 +6,7 @@ import AttendanceCalendar from "../components/attendanceMontly";
 import QuickSection from "../components/quickSection";
 import RevenueChart from "../components/RevenueChart";
 import { useNavigate } from "react-router-dom";
-const API_BASE_URL = "https://backend-v1-one.vercel.app";
+const API_BASE_URL = "https://rsfire-crm-erp-backend-v1-0.vercel.app";
 
 export default function Home() {
   const [employeeCount, setEmployeeCount] = useState(0);

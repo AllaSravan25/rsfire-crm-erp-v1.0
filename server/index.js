@@ -17,7 +17,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 const allowedOrigins = [
-  'https://frontend-v1-seven.vercel.app',
+  'https://rsfire-crm-erp-client-v1-0.vercel.app',
   'http://localhost:3000'
 ];
 
@@ -41,7 +41,7 @@ app.options('*', (req, res) => {
 // const allowedOrigins = [
 //   'https://erp-rsfire.vercel.app',
 //   'https://react-app-front-silk.vercel.app',
-//   'https://react-app-server-beta.vercel.app'
+//   'https://rsfire-crm-erp-backend-v1-0.vercel.appp'
 // ];
 
 // app.use(cors({

@@ -20,7 +20,7 @@ export default function Team() {
 
   const fetchEmployees = async () => {
     try {
-      const response = await fetch("https://backend-v1-one.vercel.app/employees")
+      const response = await fetch("https://rsfire-crm-erp-backend-v1-0.vercel.app/employees")
       if (!response.ok) {
         throw new Error('Failed to fetch employees')
       }

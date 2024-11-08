@@ -9,7 +9,7 @@ import RevenueChart from '../components/RevenueChart'
 import SpendChart from '../components/SpendChart'
 import ExpenseBreakdownChart from '../components/ExpenseBreakdownChart'
 
-const API_BASE_URL = "https://backend-v1-one.vercel.app";
+const API_BASE_URL = "https://rsfire-crm-erp-backend-v1-0.vercel.app";
 
 const Accounts = () => {
   const [searchTerm, setSearchTerm] = useState('');

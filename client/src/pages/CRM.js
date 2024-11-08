@@ -15,7 +15,7 @@ import { Label } from "../components/ui/label"
 import AddLead from '../components/AddLead'; // Import the AddLead component
 import { X } from 'lucide-react'; // Import the X icon
 
-const API_BASE_URL = "https://backend-v1-one.vercel.app";
+const API_BASE_URL = "https://rsfire-crm-erp-backend-v1-0.vercel.app";
 
 // Custom Modal component
 const Modal = ({ isOpen, onClose, children }) => {

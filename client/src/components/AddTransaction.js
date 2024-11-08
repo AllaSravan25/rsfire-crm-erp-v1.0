@@ -5,7 +5,7 @@ import { Button } from "./ui/button"
 import { Input } from "./ui/input"
 import { Label } from "./ui/label"
 
-const API_BASE_URL = "https://react-app-server-beta.vercel.app";
+const API_BASE_URL = "https://rsfire-crm-erp-backend-v1-0.vercel.appp";
 
 export default function AddTransaction({ onTransactionAdded }) {
   const [newTransaction, setNewTransaction] = useState({
