@@ -34,7 +34,7 @@ import ViewProjectModal from '../components/ViewProjectModal'; // Add this impor
 //   );
 // };
 
-const API_BASE_URL = "http://localhost:5038";
+const API_BASE_URL = "https://backend-v1-one.vercel.app";
 
 function ProjectsPage() {
   const [activeProjects, setActiveProjects] = useState([]);

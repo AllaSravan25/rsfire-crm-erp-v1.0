@@ -4,7 +4,7 @@ import axios from 'axios';
 import './styles/login.css';
 import { useAuth } from '../../context/AuthContext';
 
-const API_URL = 'http://localhost:5038'
+const API_URL = 'https://backend-v1-one.vercel.app'
 
 const Login = () => {
   const [userType, setUserType] = useState('employee');

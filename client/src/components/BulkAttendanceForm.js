@@ -4,7 +4,7 @@ import { Button } from "./ui/button"
 import { Input } from "./ui/input"
 import { Label } from "./ui/label"
 
-const API_BASE_URL = "http://localhost:5038";
+const API_BASE_URL = "https://backend-v1-one.vercel.app";
 
 function BulkAttendanceForm({ employees, onAttendanceUpdate }) {
   const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().split('T')[0]);

@@ -6,7 +6,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 // import { Calendar } from 'lucide-react'
 
 
-const API_BASE_URL = "http://localhost:5038";
+const API_BASE_URL = "https://backend-v1-one.vercel.app";
 
 
 const performanceData = [

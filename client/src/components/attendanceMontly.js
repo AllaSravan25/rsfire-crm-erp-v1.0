@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import '../components/styles/Attendancecalendar.css';
 
-const API_BASE_URL = "http://localhost:5038";
+const API_BASE_URL = "https://backend-v1-one.vercel.app";
 
 const AttendanceCalendar = ({ updateTrigger }) => {
   const [attendanceData, setAttendanceData] = useState([]);

@@ -9,7 +9,7 @@ import AddLead from './AddLead'
 import AddProject from './AddProject'
 import AddTransaction from './AddTransaction'
 
-const API_BASE_URL = "http://localhost:5038";
+const API_BASE_URL = "https://backend-v1-one.vercel.app";
 // Removed unused CustomTabsTrigger component
 
 export default function QuickSection({ onTransactionAdded }) {

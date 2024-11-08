@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
-const API_URL = "http://localhost:5038";
+const API_URL = "https://backend-v1-one.vercel.app";
 
 const Navigation = () => {
   const { userType, logout } = useAuth();
