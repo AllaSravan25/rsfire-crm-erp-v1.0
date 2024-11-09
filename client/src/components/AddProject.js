@@ -91,7 +91,8 @@ export default function AddProject() {
       const response = await axios.post(`${API_BASE_URL}/projects`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
-        }
+        },
+        withCredentials: true
       });
       console.log('AddProject: Server response:', response.data);
 
