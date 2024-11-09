@@ -5,16 +5,33 @@ const { MongoClient, ObjectId } = require('mongodb');
 const cors = require('cors');
 const multer = require('multer');
 const bcrypt = require('bcryptjs');
+const fs = require('fs');
 
 dotenv.config({ path: path.join(__dirname, '.env') });
 const app = express();
 app.use(express.json());
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, 'uploads/'),
-  filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
+  destination: (req, file, cb) => {
+    const uploadDir = 'uploads/';
+    // Create uploads directory if it doesn't exist
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir);
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    // Generate a unique filename
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + '-' + file.originalname);
+  }
 });
-const upload = multer({ storage });
+const upload = multer({ 
+  storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB limit
+  }
+});
 
 const allowedOrigins = [
   'https://rsfire-crm-erp-client-v1-0.vercel.app',
@@ -1122,7 +1139,7 @@ app.get('/account-balance', async (req, res) => {
   }
 });
 
-// Add this new route to handle project creation
+// Add this new route to handle project creation with file uploads
 app.post('/projects', upload.array('documents'), async (req, res) => {
   try {
     const db = client.db("rsfire_hyd");
@@ -1130,6 +1147,11 @@ app.post('/projects', upload.array('documents'), async (req, res) => {
     
     console.log('Received project data:', req.body);
     console.log('Received files:', req.files);
+
+    // Ensure uploads directory exists
+    if (!fs.existsSync('uploads')) {
+      fs.mkdirSync('uploads');
+    }
 
     const projectData = {
       name: req.body.name,
@@ -1165,7 +1187,11 @@ app.post('/projects', upload.array('documents'), async (req, res) => {
     });
   } catch (error) {
     console.error("Error adding project:", error);
-    res.status(500).json({ message: "Error adding project", error: error.message });
+    res.status(500).json({ 
+      message: "Error adding project", 
+      error: error.message,
+      stack: error.stack 
+    });
   }
 });
 
