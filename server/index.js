@@ -27,20 +27,27 @@ app.use((req, res, next) => {
 });
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, 'uploads');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
+  destination: function (req, file, cb) {
+    // Create uploads directory in the current directory
+    const dir = './uploads';
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
     }
-    cb(null, uploadDir);
+    cb(null, dir);
   },
-  filename: (req, file, cb) => {
+  filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + '-' + file.originalname);
+    cb(null, file.fieldname + '-' + uniqueSuffix + '-' + file.originalname);
   }
 });
 
-const upload = multer({ storage });
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  fileFilter: function (req, file, cb) {
+    cb(null, true);
+  }
+});
 
 const allowedOrigins = [
   'https://rsfire-crm-erp-client-v1-0.vercel.app',
@@ -1137,15 +1144,17 @@ app.get('/account-balance', async (req, res) => {
 // Add this new route to handle project creation with file uploads
 app.post('/projects', upload.array('documents'), async (req, res) => {
   try {
-    // Set CORS headers again specifically for this endpoint
-    res.header('Access-Control-Allow-Origin', 'https://rsfire-crm-erp-client-v1-0.vercel.app');
-    res.header('Access-Control-Allow-Credentials', 'true');
-
     const db = client.db("rsfire_hyd");
     const projects = db.collection("projects");
     
-    console.log('Received project data:', req.body);
-    console.log('Received files:', req.files);
+    // Log the received data
+    console.log('Files:', req.files);
+    console.log('Body:', req.body);
+
+    // Validate required fields
+    if (!req.body.name || !req.body.requirement || !req.body.projectValue) {
+      return res.status(400).json({ message: 'Missing required fields' });
+    }
 
     const projectData = {
       name: req.body.name,
@@ -1154,37 +1163,35 @@ app.post('/projects', upload.array('documents'), async (req, res) => {
       assignTeam: req.body.assignTeam,
       sector: req.body.sector,
       location: req.body.location,
-      contact: req.body.contact || 'no contact',
+      contact: req.body.contact,
       date: new Date(req.body.date),
-      status: req.body.status || 'active',
-      documents: req.files ? req.files.map((file, index) => ({
+      status: 'active',
+      documents: req.files ? req.files.map(file => ({
         filename: file.filename,
         originalName: file.originalname,
-        path: `/uploads/${file.filename}`,
-        label: Array.isArray(req.body.documentLabels) 
-          ? req.body.documentLabels[index] 
-          : req.body.documentLabels || file.originalname
+        path: `/uploads/${file.filename}`
       })) : []
     };
 
-    // Generate ProjectId
+    // Generate new ProjectId
     const latestProject = await projects.findOne({}, { sort: { ProjectId: -1 } });
-    const newProjectId = latestProject ? latestProject.ProjectId + 1 : 1001;
-    projectData.ProjectId = newProjectId;
+    projectData.ProjectId = (latestProject?.ProjectId || 1000) + 1;
 
+    // Insert the project
     const result = await projects.insertOne(projectData);
-    
+
     res.status(201).json({
-      message: "Project added successfully",
-      projectId: result.insertedId,
+      success: true,
+      message: 'Project created successfully',
       project: projectData
     });
+
   } catch (error) {
-    console.error("Error adding project:", error);
-    res.status(500).json({ 
-      message: "Error adding project", 
-      error: error.message,
-      stack: error.stack 
+    console.error('Project creation error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error creating project',
+      error: error.message
     });
   }
 });

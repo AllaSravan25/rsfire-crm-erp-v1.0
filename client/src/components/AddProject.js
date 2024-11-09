@@ -73,69 +73,56 @@ export default function AddProject() {
     try {
       const formData = new FormData();
       
-      // Append all non-file data
+      // Add basic project data
       Object.entries(newProject).forEach(([key, value]) => {
         if (key !== 'documents') {
           formData.append(key, value);
         }
       });
 
-      // Append files and their labels
-      if (newProject.documents && newProject.documents.length > 0) {
-        newProject.documents.forEach((doc, index) => {
-          if (doc.file instanceof File) {
-            formData.append('documents', doc.file);
-            formData.append('documentLabels', doc.label || doc.file.name);
-          }
-        });
-      }
+      // Add documents
+      newProject.documents.forEach((doc) => {
+        if (doc.file instanceof File) {
+          formData.append('documents', doc.file);
+        }
+      });
 
       const response = await axios.post(`${API_BASE_URL}/projects`, formData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
-          'Accept': 'application/json',
+          'Content-Type': 'multipart/form-data'
         },
         withCredentials: true
       });
 
-      console.log('Server response:', response.data);
-      toast.success("Project added successfully");
-      
-      // Reset form
-      setNewProject({
-        name: '',
-        requirement: '',
-        projectValue: '',
-        documents: [],
-        assignTeam: '',
-        location: '',
-        sector: '',
-        contact: '',
-        date: new Date().toISOString().split('T')[0],
-        status: 'active'
-      });
-      
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+      if (response.data.success) {
+        toast.success('Project added successfully');
+        // Reset form
+        setNewProject({
+          name: '',
+          requirement: '',
+          projectValue: '',
+          documents: [],
+          assignTeam: '',
+          sector: '',
+          date: new Date().toISOString().split('T')[0],
+          status: 'active'
+        });
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
       }
     } catch (error) {
-      console.error('Error adding project:', error);
-      toast.error(
-        error.response?.data?.message || 
-        error.message || 
-        "Failed to add project"
-      );
+      console.error('Error:', error);
+      toast.error(error.response?.data?.message || 'Failed to add project');
     }
   };
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
-    console.log('Files selected:', files);
-    
     if (files.length === 0) return;
 
     const newDocuments = files.map(file => ({
-      file,
+      file: file,
       label: file.name
     }));
 
