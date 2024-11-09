@@ -17,8 +17,9 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 const allowedOrigins = [
-  'https://rsfire-crm-erp-client-v1-0.vercel.app/',
+  'https://rsfire-crm-erp-client-v1-0.vercel.app', // remove the trailing slash
 ];
+
 
 app.use(cors({
   origin: function (origin, callback) {
@@ -32,6 +33,7 @@ app.use(cors({
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
+
 
 // Ensure OPTIONS requests are handled for preflight
 app.options('*', (req, res) => {
