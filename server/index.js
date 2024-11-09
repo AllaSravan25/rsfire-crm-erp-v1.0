@@ -6,48 +6,30 @@ const cors = require('cors');
 const multer = require('multer');
 const bcrypt = require('bcryptjs');
 const fs = require('fs');
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
 dotenv.config({ path: path.join(__dirname, '.env') });
 const app = express();
 app.use(express.json());
 
-// Single CORS configuration
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', 'https://rsfire-crm-erp-client-v1-0.vercel.app');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  res.header('Access-Control-Allow-Credentials', 'true');
-
-  // Handle preflight
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  next();
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    // Create uploads directory in the current directory
-    const dir = './uploads';
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    cb(null, dir);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + '-' + file.originalname);
+// Update storage configuration to use Cloudinary
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'rsfire-projects',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx']
   }
 });
 
-const upload = multer({ 
-  storage: storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
-  fileFilter: function (req, file, cb) {
-    cb(null, true);
-  }
-});
+const upload = multer({ storage: storage });
 
 const allowedOrigins = [
   'https://rsfire-crm-erp-client-v1-0.vercel.app',
@@ -1169,7 +1151,8 @@ app.post('/projects', upload.array('documents'), async (req, res) => {
       documents: req.files ? req.files.map(file => ({
         filename: file.filename,
         originalName: file.originalname,
-        path: `/uploads/${file.filename}`
+        path: file.path, // This will be the Cloudinary URL
+        public_id: file.public_id
       })) : []
     };
 
