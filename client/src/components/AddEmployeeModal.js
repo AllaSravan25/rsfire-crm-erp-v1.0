@@ -84,7 +84,8 @@ export default function AddEmployeeModal({ isOpen, onClose, onAddEmployee, initi
   };
 
   const handleFileChange = (e) => {
-    setDocuments([...documents, ...Array.from(e.target.files)]);
+    const files = Array.from(e.target.files);
+    setDocuments(prevDocs => [...prevDocs, ...files]);
   };
 
   const removeDocument = (index) => {
@@ -96,11 +97,7 @@ const handleSubmit = async (e) => {
     const formData = new FormData();
     
     Object.keys(employeeData).forEach(key => {
-      if (key === 'dateOfBirth' || key === 'hireDate') {
-        formData.append(key, employeeData[key] ? new Date(employeeData[key]).toISOString() : '');
-      } else {
-        formData.append(key, employeeData[key]);
-      }
+      formData.append(key, employeeData[key]);
     });
 
     documents.forEach((doc) => {
@@ -112,34 +109,18 @@ const handleSubmit = async (e) => {
     });
 
     try {
-      const url = isEditing ? `${API_URL}/employees/${employeeData.userId}` : `${API_URL}/employees`;
-      const method = isEditing ? 'PUT' : 'POST';
-      
-      const response = await fetch(url, {
-        method: method,
+      const response = await fetch(`${API_URL}/employees`, {
+        method: 'POST',
         body: formData,
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json',
+        }
+        // Don't set Content-Type header when sending FormData
       });
 
-      const contentType = response.headers.get("content-type");
-      
       if (!response.ok) {
-        let errorMessage = `Server error (${response.status})`;
-        
-        if (contentType && contentType.includes("application/json")) {
-          const errorData = await response.json();
-          errorMessage = errorData.message || errorMessage;
-        } else {
-          const textError = await response.text();
-          console.error('Server response:', textError);
-          errorMessage = `Server error: ${response.status} ${response.statusText}`;
-        }
-        
-        throw new Error(errorMessage);
-      }
-
-      // Make sure we have JSON response before parsing
-      if (!contentType || !contentType.includes("application/json")) {
-        throw new Error("Server didn't return JSON");
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const result = await response.json();

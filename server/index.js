@@ -37,6 +37,13 @@ const allowedOrigins = [
   'http://localhost:3000'
 ];
 
+app.use(cors({
+  origin: 'https://rsfire-crm-erp-client-v1-0.vercel.app',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   if (allowedOrigins.includes(origin)) {
@@ -274,10 +281,6 @@ app.get('/', function(req, res){
 
 app.post('/employees', upload.array('documents'), async (req, res) => {
   try {
-    // Set CORS headers for this endpoint
-    res.header('Access-Control-Allow-Origin', 'https://rsfire-crm-erp-client-v1-0.vercel.app');
-    res.header('Access-Control-Allow-Credentials', 'true');
-
     const db = client.db("rsfire_hyd");
     const employees = db.collection("employees");
     
@@ -299,7 +302,7 @@ app.post('/employees', upload.array('documents'), async (req, res) => {
       documents: req.files ? req.files.map(file => ({
         filename: file.filename,
         originalName: file.originalname,
-        path: file.path, // This will be the Cloudinary URL
+        path: file.secure_url, // Use secure_url from Cloudinary
         public_id: file.public_id
       })) : []
     };
