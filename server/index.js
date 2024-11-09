@@ -39,25 +39,21 @@ const allowedOrigins = [
   'http://localhost:3000'
 ];
 
-app.use(cors({
-  origin: allowedOrigins,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-}));
-
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   if (allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.header('Access-Control-Max-Age', '86400'); // 24 hours
   }
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  
+
+  // Handle preflight requests
   if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
+    return res.status(200).end();
   }
+
   next();
 });
 
@@ -1138,9 +1134,17 @@ app.post('/projects', upload.array('documents'), async (req, res) => {
     console.log('Received project data:', req.body);
     console.log('Received files:', req.files);
 
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ 
+        message: "No files were uploaded",
+        receivedData: req.body
+      });
+    }
+
     // Ensure uploads directory exists
-    if (!fs.existsSync('uploads')) {
-      fs.mkdirSync('uploads');
+    const uploadDir = path.join(__dirname, 'uploads');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
     }
 
     const projectData = {
@@ -1153,17 +1157,19 @@ app.post('/projects', upload.array('documents'), async (req, res) => {
       contact: req.body.contact || 'no contact',
       date: new Date(req.body.date),
       status: req.body.status || 'active',
-      documents: req.files ? req.files.map((file, index) => ({
+      documents: req.files.map((file, index) => ({
         filename: file.filename,
         originalName: file.originalname,
         path: `/uploads/${file.filename}`,
-        label: req.body.documentLabels[index] || file.originalname
-      })) : []
+        label: Array.isArray(req.body.documentLabels) 
+          ? req.body.documentLabels[index] 
+          : req.body.documentLabels || file.originalname
+      }))
     };
 
     // Generate a new ProjectId
     const latestProject = await projects.findOne({}, { sort: { ProjectId: -1 } });
-    const newProjectId = latestProject ? latestProject.ProjectId + 1 : 1001; // Start from 1001 if no projects exist
+    const newProjectId = latestProject ? latestProject.ProjectId + 1 : 1001;
     projectData.ProjectId = newProjectId;
 
     console.log('Inserting project:', projectData);

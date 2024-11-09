@@ -73,6 +73,8 @@ export default function AddProject() {
     try {
       console.log('Submitting project with state:', JSON.stringify(newProject, null, 2));
       const formData = new FormData();
+      
+      // Append all non-file data
       Object.entries(newProject).forEach(([key, value]) => {
         if (key !== 'documents') {
           formData.append(key, value);
@@ -80,11 +82,16 @@ export default function AddProject() {
         }
       });
 
-      newProject.documents.forEach((doc, index) => {
-        formData.append('documents', doc.file);
-        formData.append('documentLabels', doc.label);
-        console.log(`Appending document ${index}:`, doc.file.name, doc.label);
-      });
+      // Append files and their labels
+      if (newProject.documents && newProject.documents.length > 0) {
+        newProject.documents.forEach((doc, index) => {
+          if (doc.file instanceof File) {
+            formData.append('documents', doc.file);
+            formData.append('documentLabels', doc.label || doc.file.name);
+            console.log(`Appending document ${index}:`, doc.file.name, doc.label);
+          }
+        });
+      }
 
       console.log('FormData entries:', [...formData.entries()]);
 
@@ -94,8 +101,10 @@ export default function AddProject() {
         },
         withCredentials: true
       });
+
       console.log('AddProject: Server response:', response.data);
 
+      // Reset form after successful submission
       setNewProject({
         name: '',
         requirement: '',
@@ -107,18 +116,20 @@ export default function AddProject() {
         contact: '',
         date: new Date().toISOString().split('T')[0],
       });
+
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
-      toast.success("Project added successfully", {
-        description: "Your new project has been added.",
-      });
+
+      toast.success("Project added successfully");
     } catch (error) {
       console.error('AddProject: Error adding project:', error);
       console.error('AddProject: Error response:', error.response?.data);
-      toast.error("Failed to add project", {
-        description: error.response?.data?.message || "Please try again.",
-      });
+      
+      toast.error(
+        error.response?.data?.message || 
+        "Failed to add project. Please try again."
+      );
     }
   };
 
