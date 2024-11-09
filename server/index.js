@@ -41,7 +41,8 @@ app.use(cors({
   origin: 'https://rsfire-crm-erp-client-v1-0.vercel.app',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range']
 }));
 
 app.use((req, res, next) => {
@@ -298,14 +299,12 @@ const employeeUpload = multer({ storage: employeeStorage });
 // Update the employees POST endpoint
 app.post('/employees', employeeUpload.array('documents'), async (req, res) => {
   try {
-    console.log('Received request to add employee');
-    console.log('Files:', req.files);
-    console.log('Body:', req.body);
-
     const db = client.db("rsfire_hyd");
     const employees = db.collection("employees");
+    
+    console.log('Received employee data:', req.body);
+    console.log('Received files:', req.files);
 
-    // Create employee data object
     const employeeData = {
       userId: parseInt(req.body.userId),
       firstName: req.body.firstName,
@@ -322,20 +321,11 @@ app.post('/employees', employeeUpload.array('documents'), async (req, res) => {
         filename: file.filename,
         originalName: file.originalname,
         path: file.path,
-        secure_url: file.secure_url, // Add secure_url from Cloudinary
+        secure_url: file.secure_url,
         public_id: file.public_id,
         format: file.format
       })) : []
     };
-
-    // Check if employee exists
-    const existingEmployee = await employees.findOne({ userId: employeeData.userId });
-    if (existingEmployee) {
-      return res.status(400).json({
-        success: false,
-        message: `Employee with ID ${employeeData.userId} already exists`
-      });
-    }
 
     const result = await employees.insertOne(employeeData);
     
@@ -347,18 +337,6 @@ app.post('/employees', employeeUpload.array('documents'), async (req, res) => {
 
   } catch (error) {
     console.error("Error adding employee:", error);
-    // If there was an error and files were uploaded, clean them up
-    if (req.files) {
-      for (const file of req.files) {
-        if (file.public_id) {
-          try {
-            await cloudinary.uploader.destroy(file.public_id);
-          } catch (cleanupError) {
-            console.error("Error cleaning up file:", cleanupError);
-          }
-        }
-      }
-    }
     res.status(500).json({
       success: false,
       message: "Error adding employee",
