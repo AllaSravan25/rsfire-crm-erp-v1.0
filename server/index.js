@@ -17,64 +17,46 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 const allowedOrigins = [
-  'https://rsfire-crm-erp-client-v1-0.vercel.app', // remove the trailing slash
+  'https://rsfire-crm-erp-client-v1-0.vercel.app',
+  'https://rsfire-crm-erp-backend-v1-0.vercel.app'
 ];
-
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
+      console.log('Blocked origin:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  maxAge: 86400
 }));
 
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', 'https://rsfire-crm-erp-client-v1-0.vercel.app');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.header('Access-Control-Allow-Credentials', true);
+  
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  next();
+});
 
 // Ensure OPTIONS requests are handled for preflight
 app.options('*', (req, res) => {
   res.sendStatus(200);
 });
-// const allowedOrigins = [
-//   'https://erp-rsfire.vercel.app',
-//   'https://react-app-front-silk.vercel.app',
-//   'https://rsfire-crm-erp-backend-v1-0.vercel.appp'
-// ];
-
-// app.use(cors({
-//   origin: function (origin, callback) {
-//     if (allowedOrigins.includes(origin) || !origin) {
-//       callback(null, true);
-//     } else {
-//       callback(new Error('Not allowed by CORS'));
-//     }
-//   },
-//   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-//   credentials: true,
-//   allowedHeaders: ['Content-Type', 'Authorization'],
-// }));
-
-
-
-// const allowedOrigin = process.env.ALLOWED_ORIGIN || 'https://erp-rsfire.vercel.app' || 'https://react-app-front-silk.vercel.app'  || '*';
-
-// app.use(cors({
-//   origin: allowedOrigin,
-//   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-//   credentials: true,
-//   allowedHeaders: ['Content-Type', 'Authorization'],
-// }));
-
-// app.use(cors({
-//   origin: '*',
-//   methods: ['GET', 'POST', 'PUT', 'DELETE'],
-//   credentials: true,
-//   allowedHeaders: ['Content-Type', 'Authorization'],
-// }));
 
 // check DB conection
 
