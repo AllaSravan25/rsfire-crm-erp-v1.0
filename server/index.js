@@ -18,7 +18,8 @@ const upload = multer({ storage });
 
 const allowedOrigins = [
   'https://rsfire-crm-erp-client-v1-0.vercel.app',
-  'https://rsfire-crm-erp-backend-v1-0.vercel.app'
+  'https://rsfire-crm-erp-backend-v1-0.vercel.app',
+  'http://localhost:3000'
 ];
 
 app.use(cors({
@@ -1463,8 +1464,8 @@ async function startServer() {
     }
   })
 
-  app.listen(5038, () => {
-    console.log('Server is running on port 5038');
+  app.listen(process.env.PORT || 5038, () => {
+    console.log(`Server is running on port ${process.env.PORT || 5038}`);
   });
 }
 
