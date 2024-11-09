@@ -3,8 +3,9 @@ import { Input } from "../components/ui/input"
 import { Button } from "../components/ui/button"
 import { Card, CardContent } from "../components/ui/card"
 import { Avatar, AvatarFallback } from "../components/ui/Avatar"
-import { Search, Plus, FileText } from 'lucide-react'
+import { Search, Plus, FileText, Trash2 } from 'lucide-react'
 import AddEmployeeModal from '../components/AddEmployeeModal'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../components/ui/alert-dialog"
 
 export default function Team() {
   const [searchTerm, setSearchTerm] = useState('')
@@ -49,6 +50,26 @@ export default function Team() {
     setIsViewDocumentsModalOpen(true)
   }
 
+  const handleDeleteEmployee = async (userId) => {
+    try {
+      const response = await fetch(`https://rsfire-crm-erp-backend-v1-0.vercel.app/employees/${userId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete employee');
+      }
+
+      setTeamMembers(teamMembers.filter(member => member.userId !== userId));
+      
+      if (selectedMember?.userId === userId) {
+        setSelectedMember(null);
+      }
+    } catch (error) {
+      console.error('Error deleting employee:', error);
+    }
+  }
+
   const filteredMembers = teamMembers.filter(member =>
     member.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     member.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -78,19 +99,41 @@ export default function Team() {
         <div className="lg:col-span-2 grid sm:grid-cols-2 md:grid-cols-3 gap-4">
           {filteredMembers.map((member) => (
             <Card 
-              key={member._id || member.userId} // Use a unique identifier
+              key={member._id || member.userId}
               className={`cursor-pointer hover:shadow-md transition-shadow ${selectedMember?.userId === member.userId ? 'ring-2 ring-blue-500' : ''} shadow rounded-lg`}
-              onClick={() => setSelectedMember(member)}
             >
               <CardContent className="p-4">
-                <div className="flex items-center space-x-4" >
-                  <Avatar className="w-12 h-12" style={{ backgroundColor: '#dceeff' }}>
-                    <AvatarFallback>{`${member.firstName[0]}${member.lastName[0]}`}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <h3 className="font-semibold">{`${member.firstName} ${member.lastName}`}</h3>
-                    <p className="text-sm text-gray-500">{member.department}</p>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4" onClick={() => setSelectedMember(member)}>
+                    <Avatar className="w-12 h-12" style={{ backgroundColor: '#dceeff' }}>
+                      <AvatarFallback>{`${member.firstName[0]}${member.lastName[0]}`}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h3 className="font-semibold">{`${member.firstName} ${member.lastName}`}</h3>
+                      <p className="text-sm text-gray-500">{member.department}</p>
+                    </div>
                   </div>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-700 hover:bg-red-100">
+                        <Trash2 size={18} />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This action cannot be undone. This will permanently delete {member.firstName} {member.lastName}'s account and remove their data from the system.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDeleteEmployee(member.userId)} className="bg-red-500 hover:bg-red-600">
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
                 <div className="mt-4 flex justify-between text-sm text-gray-500">
                   <span>ID: {member.userId}</span>

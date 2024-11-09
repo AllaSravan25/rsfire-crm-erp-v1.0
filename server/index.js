@@ -1471,3 +1471,23 @@ async function startServer() {
 startServer().then(() => {
   logTransactionsSchema();
 }).catch(console.error);
+
+// Add this new route before app.listen()
+app.delete('/employees/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const db = client.db("rsfire_hyd");
+    const employees = db.collection("employees");
+
+    const result = await employees.deleteOne({ userId: parseInt(userId) });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
+
+    res.json({ message: "Employee deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting employee:", error);
+    res.status(500).json({ message: "Error deleting employee", error: error.message });
+  }
+});
