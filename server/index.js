@@ -18,7 +18,6 @@ const upload = multer({ storage });
 
 const allowedOrigins = [
   'https://rsfire-crm-erp-client-v1-0.vercel.app',
-  'http://localhost:3000'
 ];
 
 app.use(cors({
