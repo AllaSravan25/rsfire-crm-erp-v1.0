@@ -81,16 +81,19 @@ export default function AddProject() {
       });
 
       // Append files and their labels
-      newProject.documents.forEach((doc, index) => {
-        if (doc.file instanceof File) {
-          formData.append('documents', doc.file);
-          formData.append('documentLabels', doc.label);
-        }
-      });
+      if (newProject.documents && newProject.documents.length > 0) {
+        newProject.documents.forEach((doc, index) => {
+          if (doc.file instanceof File) {
+            formData.append('documents', doc.file);
+            formData.append('documentLabels', doc.label || doc.file.name);
+          }
+        });
+      }
 
       const response = await axios.post(`${API_BASE_URL}/projects`, formData, {
         headers: {
-          'Content-Type': 'multipart/form-data'
+          'Content-Type': 'multipart/form-data',
+          'Accept': 'application/json',
         },
         withCredentials: true
       });
@@ -117,17 +120,25 @@ export default function AddProject() {
       }
     } catch (error) {
       console.error('Error adding project:', error);
-      toast.error(error.response?.data?.message || "Failed to add project");
+      toast.error(
+        error.response?.data?.message || 
+        error.message || 
+        "Failed to add project"
+      );
     }
   };
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files);
     console.log('Files selected:', files);
+    
+    if (files.length === 0) return;
+
     const newDocuments = files.map(file => ({
-      file: file,  // Store the actual file object
+      file,
       label: file.name
     }));
+
     setNewProject(prev => ({
       ...prev,
       documents: [...prev.documents, ...newDocuments]

@@ -11,51 +11,36 @@ dotenv.config({ path: path.join(__dirname, '.env') });
 const app = express();
 app.use(express.json());
 
-// Add these CORS headers for all routes
-app.use(cors({
-  origin: ['https://rsfire-crm-erp-client-v1-0.vercel.app', 'http://localhost:3000'],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-}));
-
-// Add this middleware to handle preflight requests
+// Single CORS configuration
 app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (origin === 'https://rsfire-crm-erp-client-v1-0.vercel.app' || origin === 'http://localhost:3000') {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-  }
-  
+  res.header('Access-Control-Allow-Origin', 'https://rsfire-crm-erp-client-v1-0.vercel.app');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
+
+  // Handle preflight
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
+
   next();
 });
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir = 'uploads/';
-    // Create uploads directory if it doesn't exist
+    const uploadDir = path.join(__dirname, 'uploads');
     if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir);
+      fs.mkdirSync(uploadDir, { recursive: true });
     }
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    // Generate a unique filename
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     cb(null, uniqueSuffix + '-' + file.originalname);
   }
 });
-const upload = multer({ 
-  storage,
-  limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB limit
-  }
-});
+
+const upload = multer({ storage });
 
 const allowedOrigins = [
   'https://rsfire-crm-erp-client-v1-0.vercel.app',
@@ -1152,24 +1137,15 @@ app.get('/account-balance', async (req, res) => {
 // Add this new route to handle project creation with file uploads
 app.post('/projects', upload.array('documents'), async (req, res) => {
   try {
+    // Set CORS headers again specifically for this endpoint
+    res.header('Access-Control-Allow-Origin', 'https://rsfire-crm-erp-client-v1-0.vercel.app');
+    res.header('Access-Control-Allow-Credentials', 'true');
+
     const db = client.db("rsfire_hyd");
     const projects = db.collection("projects");
     
     console.log('Received project data:', req.body);
     console.log('Received files:', req.files);
-
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ 
-        message: "No files were uploaded",
-        receivedData: req.body
-      });
-    }
-
-    // Create uploads directory if it doesn't exist
-    const uploadDir = path.join(__dirname, 'uploads');
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
 
     const projectData = {
       name: req.body.name,
@@ -1181,14 +1157,14 @@ app.post('/projects', upload.array('documents'), async (req, res) => {
       contact: req.body.contact || 'no contact',
       date: new Date(req.body.date),
       status: req.body.status || 'active',
-      documents: req.files.map((file, index) => ({
+      documents: req.files ? req.files.map((file, index) => ({
         filename: file.filename,
         originalName: file.originalname,
         path: `/uploads/${file.filename}`,
         label: Array.isArray(req.body.documentLabels) 
           ? req.body.documentLabels[index] 
           : req.body.documentLabels || file.originalname
-      }))
+      })) : []
     };
 
     // Generate ProjectId
