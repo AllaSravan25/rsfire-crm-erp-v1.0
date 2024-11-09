@@ -97,14 +97,16 @@ const handleSubmit = async (e) => {
     const formData = new FormData();
     
     Object.keys(employeeData).forEach(key => {
-      formData.append(key, employeeData[key]);
+      if (key === 'dateOfBirth' || key === 'hireDate') {
+        formData.append(key, employeeData[key] ? new Date(employeeData[key]).toISOString() : '');
+      } else {
+        formData.append(key, employeeData[key]);
+      }
     });
 
     documents.forEach((doc) => {
       if (doc instanceof File) {
         formData.append('documents', doc);
-      } else {
-        formData.append('existingDocuments', JSON.stringify(doc));
       }
     });
 
@@ -116,17 +118,21 @@ const handleSubmit = async (e) => {
         headers: {
           'Accept': 'application/json',
         }
-        // Don't set Content-Type header when sending FormData
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || `HTTP error! status: ${response.status}`);
       }
 
       const result = await response.json();
-      onAddEmployee(result.employee);
-      resetForm();
-      onClose();
+      if (result.success) {
+        onAddEmployee(result.employee);
+        resetForm();
+        onClose();
+      } else {
+        throw new Error(result.message || 'Failed to add employee');
+      }
     } catch (error) {
       console.error('Error adding/updating employee:', error);
       alert(`Error adding/updating employee: ${error.message}`);

@@ -279,7 +279,25 @@ app.get('/', function(req, res){
     // createEmployeesCollection();
 });
 
-app.post('/employees', upload.array('documents'), async (req, res) => {
+// Update the multer configuration for employee documents
+const employeeStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'rsfire-employees',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx']
+  }
+});
+
+const employeeUpload = multer({ storage: employeeStorage });
+
+// Update only the employees POST endpoint
+app.post('/employees', employeeUpload.array('documents'), async (req, res) => {
+  // Set CORS headers specifically for this endpoint
+  res.header('Access-Control-Allow-Origin', 'https://rsfire-crm-erp-client-v1-0.vercel.app');
+  res.header('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
+
   try {
     const db = client.db("rsfire_hyd");
     const employees = db.collection("employees");
@@ -302,7 +320,7 @@ app.post('/employees', upload.array('documents'), async (req, res) => {
       documents: req.files ? req.files.map(file => ({
         filename: file.filename,
         originalName: file.originalname,
-        path: file.secure_url, // Use secure_url from Cloudinary
+        path: file.secure_url,
         public_id: file.public_id
       })) : []
     };
@@ -324,6 +342,14 @@ app.post('/employees', upload.array('documents'), async (req, res) => {
   }
 });
 
+// Add OPTIONS handler specifically for the employees endpoint
+app.options('/employees', (req, res) => {
+  res.header('Access-Control-Allow-Origin', 'https://rsfire-crm-erp-client-v1-0.vercel.app');
+  res.header('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.sendStatus(200);
+});
 
 app.get('/employees', async (req, res) => {
   try {
