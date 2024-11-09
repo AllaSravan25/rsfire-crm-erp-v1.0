@@ -71,29 +71,22 @@ export default function AddProject() {
 
   const submitProject = async () => {
     try {
-      console.log('Submitting project with state:', JSON.stringify(newProject, null, 2));
       const formData = new FormData();
       
       // Append all non-file data
       Object.entries(newProject).forEach(([key, value]) => {
         if (key !== 'documents') {
           formData.append(key, value);
-          console.log(`Appending ${key}:`, value);
         }
       });
 
       // Append files and their labels
-      if (newProject.documents && newProject.documents.length > 0) {
-        newProject.documents.forEach((doc, index) => {
-          if (doc.file instanceof File) {
-            formData.append('documents', doc.file);
-            formData.append('documentLabels', doc.label || doc.file.name);
-            console.log(`Appending document ${index}:`, doc.file.name, doc.label);
-          }
-        });
-      }
-
-      console.log('FormData entries:', [...formData.entries()]);
+      newProject.documents.forEach((doc, index) => {
+        if (doc.file instanceof File) {
+          formData.append('documents', doc.file);
+          formData.append('documentLabels', doc.label);
+        }
+      });
 
       const response = await axios.post(`${API_BASE_URL}/projects`, formData, {
         headers: {
@@ -102,9 +95,10 @@ export default function AddProject() {
         withCredentials: true
       });
 
-      console.log('AddProject: Server response:', response.data);
-
-      // Reset form after successful submission
+      console.log('Server response:', response.data);
+      toast.success("Project added successfully");
+      
+      // Reset form
       setNewProject({
         name: '',
         requirement: '',
@@ -115,21 +109,15 @@ export default function AddProject() {
         sector: '',
         contact: '',
         date: new Date().toISOString().split('T')[0],
+        status: 'active'
       });
-
+      
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
-
-      toast.success("Project added successfully");
     } catch (error) {
-      console.error('AddProject: Error adding project:', error);
-      console.error('AddProject: Error response:', error.response?.data);
-      
-      toast.error(
-        error.response?.data?.message || 
-        "Failed to add project. Please try again."
-      );
+      console.error('Error adding project:', error);
+      toast.error(error.response?.data?.message || "Failed to add project");
     }
   };
 
@@ -137,15 +125,14 @@ export default function AddProject() {
     const files = Array.from(e.target.files);
     console.log('Files selected:', files);
     const newDocuments = files.map(file => ({
-      file,
+      file: file,  // Store the actual file object
       label: file.name
     }));
     setNewProject(prev => ({
       ...prev,
       documents: [...prev.documents, ...newDocuments]
     }));
-    console.log('Updated documents:', newProject.documents);
-  }
+  };
 
   const handleRemoveDocument = (index) => {
     setNewProject(prev => ({

@@ -11,6 +11,30 @@ dotenv.config({ path: path.join(__dirname, '.env') });
 const app = express();
 app.use(express.json());
 
+// Add these CORS headers for all routes
+app.use(cors({
+  origin: ['https://rsfire-crm-erp-client-v1-0.vercel.app', 'http://localhost:3000'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+}));
+
+// Add this middleware to handle preflight requests
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin === 'https://rsfire-crm-erp-client-v1-0.vercel.app' || origin === 'http://localhost:3000') {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+  
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  next();
+});
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir = 'uploads/';
@@ -1141,7 +1165,7 @@ app.post('/projects', upload.array('documents'), async (req, res) => {
       });
     }
 
-    // Ensure uploads directory exists
+    // Create uploads directory if it doesn't exist
     const uploadDir = path.join(__dirname, 'uploads');
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
@@ -1167,15 +1191,13 @@ app.post('/projects', upload.array('documents'), async (req, res) => {
       }))
     };
 
-    // Generate a new ProjectId
+    // Generate ProjectId
     const latestProject = await projects.findOne({}, { sort: { ProjectId: -1 } });
     const newProjectId = latestProject ? latestProject.ProjectId + 1 : 1001;
     projectData.ProjectId = newProjectId;
 
-    console.log('Inserting project:', projectData);
     const result = await projects.insertOne(projectData);
     
-    console.log('Project inserted:', result.insertedId);
     res.status(201).json({
       message: "Project added successfully",
       projectId: result.insertedId,
