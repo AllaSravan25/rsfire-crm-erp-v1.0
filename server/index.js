@@ -274,14 +274,18 @@ app.get('/', function(req, res){
 
 app.post('/employees', upload.array('documents'), async (req, res) => {
   try {
+    // Set CORS headers for this endpoint
+    res.header('Access-Control-Allow-Origin', 'https://rsfire-crm-erp-client-v1-0.vercel.app');
+    res.header('Access-Control-Allow-Credentials', 'true');
+
     const db = client.db("rsfire_hyd");
     const employees = db.collection("employees");
-
+    
     console.log('Received employee data:', req.body);
     console.log('Received files:', req.files);
 
     const employeeData = {
-      userId: parseInt(req.body.userId, 10),
+      userId: parseInt(req.body.userId),
       firstName: req.body.firstName,
       lastName: req.body.lastName,
       dateOfBirth: new Date(req.body.dateOfBirth),
@@ -295,44 +299,43 @@ app.post('/employees', upload.array('documents'), async (req, res) => {
       documents: req.files ? req.files.map(file => ({
         filename: file.filename,
         originalName: file.originalname,
-        path: `${req.protocol}://${req.get('host')}/uploads/${file.filename}`
+        path: file.path, // This will be the Cloudinary URL
+        public_id: file.public_id
       })) : []
     };
 
-    console.log('Processed employee data:', JSON.stringify(employeeData, null, 2));
-
     const result = await employees.insertOne(employeeData);
-    console.log('Inserted employee with ID:', result.insertedId);
-
+    
     res.status(201).json({
+      success: true,
       message: "Employee added successfully",
-      employeeId: result.insertedId,
       employee: employeeData
     });
   } catch (error) {
     console.error("Error adding employee:", error);
-    console.error("Error stack:", error.stack);
-    res.status(500).json({
-      message: "Error adding employee",
-      error: error.message,
-      stack: error.stack,
+    res.status(500).json({ 
+      success: false,
+      message: "Error adding employee", 
+      error: error.message 
     });
   }
 });
 
 
 app.get('/employees', async (req, res) => {
-    console.log('Received request for employees');
-    try {
-        const db = client.db("rsfire_hyd");
-        const employees = db.collection("employees");
-        const result = await employees.find({}).toArray();
-        // console.log('Employees found:', result.length);
-        res.status(200).json(result);
-    } catch (error) {
-        console.error("Error retrieving employees:", error);
-        res.status(500).json({ message: "Error retrieving employees" });
-    }
+  try {
+    // Set CORS headers for this endpoint
+    res.header('Access-Control-Allow-Origin', 'https://rsfire-crm-erp-client-v1-0.vercel.app');
+    res.header('Access-Control-Allow-Credentials', 'true');
+
+    const db = client.db("rsfire_hyd");
+    const employees = db.collection("employees");
+    const result = await employees.find({}).toArray();
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error retrieving employees:", error);
+    res.status(500).json({ message: "Error retrieving employees" });
+  }
 });
 
 app.get('/employees/count', async (req, res) => {
