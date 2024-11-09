@@ -7,7 +7,9 @@ import { Select } from "./ui/select";
 
 
 
-const API_URL = "https://rsfire-crm-erp-backend-v1-0.vercel.app";
+const API_URL = process.env.NODE_ENV === 'development' 
+  ? "http://localhost:5038"
+  : "https://rsfire-crm-erp-backend-v1-0.vercel.app";
 
 const initialEmployeeData = {
   userId: '',
@@ -96,14 +98,14 @@ const handleSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData();
     
+    // Add basic employee data
     Object.keys(employeeData).forEach(key => {
-      if (key === 'dateOfBirth' || key === 'hireDate') {
-        formData.append(key, employeeData[key] ? new Date(employeeData[key]).toISOString() : '');
-      } else {
+      if (employeeData[key] !== null && employeeData[key] !== undefined) {
         formData.append(key, employeeData[key]);
       }
     });
 
+    // Add documents
     documents.forEach((doc) => {
       if (doc instanceof File) {
         formData.append('documents', doc);
@@ -115,21 +117,19 @@ const handleSubmit = async (e) => {
         method: 'POST',
         body: formData,
         credentials: 'include',
-        headers: {
-          'Accept': 'application/json',
-        }
       });
 
+      const result = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.message || `HTTP error! status: ${response.status}`);
+        throw new Error(result.message || 'Failed to add employee');
       }
 
-      const result = await response.json();
       if (result.success) {
         onAddEmployee(result.employee);
         resetForm();
         onClose();
+        alert('Employee added successfully!');
       } else {
         throw new Error(result.message || 'Failed to add employee');
       }

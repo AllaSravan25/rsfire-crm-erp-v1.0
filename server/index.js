@@ -284,46 +284,58 @@ const employeeStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: 'rsfire-employees',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx']
+    allowed_formats: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx'],
+    transformation: [{ width: 500, height: 500, crop: "limit" }],
+    public_id: (req, file) => {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      return `employee-${uniqueSuffix}`;
+    }
   }
 });
 
 const employeeUpload = multer({ storage: employeeStorage });
 
-// Update only the employees POST endpoint
+// Update the employees POST endpoint
 app.post('/employees', employeeUpload.array('documents'), async (req, res) => {
-  // Set CORS headers specifically for this endpoint
-  res.header('Access-Control-Allow-Origin', 'https://rsfire-crm-erp-client-v1-0.vercel.app');
-  res.header('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.header('Access-Control-Allow-Credentials', 'true');
-
   try {
+    console.log('Received request to add employee');
+    console.log('Files:', req.files);
+    console.log('Body:', req.body);
+
     const db = client.db("rsfire_hyd");
     const employees = db.collection("employees");
-    
-    console.log('Received employee data:', req.body);
-    console.log('Received files:', req.files);
 
+    // Create employee data object
     const employeeData = {
       userId: parseInt(req.body.userId),
       firstName: req.body.firstName,
       lastName: req.body.lastName,
-      dateOfBirth: new Date(req.body.dateOfBirth),
+      dateOfBirth: req.body.dateOfBirth ? new Date(req.body.dateOfBirth) : null,
       gender: req.body.gender,
       contactNumber: req.body.contactNumber,
       address: req.body.address,
       position: req.body.position,
       department: req.body.department,
-      hireDate: new Date(req.body.hireDate),
+      hireDate: req.body.hireDate ? new Date(req.body.hireDate) : null,
       status: req.body.status || 'present',
       documents: req.files ? req.files.map(file => ({
         filename: file.filename,
         originalName: file.originalname,
-        path: file.secure_url,
-        public_id: file.public_id
+        path: file.path,
+        secure_url: file.secure_url, // Add secure_url from Cloudinary
+        public_id: file.public_id,
+        format: file.format
       })) : []
     };
+
+    // Check if employee exists
+    const existingEmployee = await employees.findOne({ userId: employeeData.userId });
+    if (existingEmployee) {
+      return res.status(400).json({
+        success: false,
+        message: `Employee with ID ${employeeData.userId} already exists`
+      });
+    }
 
     const result = await employees.insertOne(employeeData);
     
@@ -332,12 +344,25 @@ app.post('/employees', employeeUpload.array('documents'), async (req, res) => {
       message: "Employee added successfully",
       employee: employeeData
     });
+
   } catch (error) {
     console.error("Error adding employee:", error);
-    res.status(500).json({ 
+    // If there was an error and files were uploaded, clean them up
+    if (req.files) {
+      for (const file of req.files) {
+        if (file.public_id) {
+          try {
+            await cloudinary.uploader.destroy(file.public_id);
+          } catch (cleanupError) {
+            console.error("Error cleaning up file:", cleanupError);
+          }
+        }
+      }
+    }
+    res.status(500).json({
       success: false,
-      message: "Error adding employee", 
-      error: error.message 
+      message: "Error adding employee",
+      error: error.message
     });
   }
 });
