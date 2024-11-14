@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from "./ui/button";
 import { ExternalLink } from 'lucide-react';
 
-const API_BASE_URL = "https://rsfire-crm-erp-backend-v1-0.vercel.appp"; // Add this line
+const API_BASE_URL = "https://rsfire-crm-erp-backend-v1-0.vercel.app"; // Add this line
 
 const ViewProjectModal = ({ isOpen, onClose, project, onViewDocument }) => {
   if (!isOpen || !project) return null;
