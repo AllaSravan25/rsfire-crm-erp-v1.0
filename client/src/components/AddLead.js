@@ -12,7 +12,7 @@ import { Label } from "./ui/label"
 //   SelectValue,
 // } from "./ui/select"
 
-const API_BASE_URL = "https://rsfire-crm-erp-backend-v1-0.vercel.appp";
+const API_BASE_URL = "https://rsfire-crm-erp-backend-v1-0.vercel.app";
 
 export default function AddLead() {
   console.log('Rendering AddLead component');
