@@ -35,6 +35,7 @@ const allowedOrigins = [
   'https://rsfire-crm-erp-client-v1-0.vercel.app',
   'https://rsfire-crm-erp-backend-v1-0.vercel.app',
   'https://app.spline.design',
+  'https://api.amplitude.com',
   'http://localhost:3000'
 ];
 
