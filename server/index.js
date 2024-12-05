@@ -34,6 +34,7 @@ const upload = multer({ storage: storage });
 const allowedOrigins = [
   'https://rsfire-crm-erp-client-v1-0.vercel.app',
   'https://rsfire-crm-erp-backend-v1-0.vercel.app',
+  'https://app.spline.design',
   'http://localhost:3000'
 ];
 
